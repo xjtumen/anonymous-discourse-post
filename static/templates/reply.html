@@ -8,11 +8,11 @@
 </head>
 
 <body>
-<p>You are replying to {{title}} </p>
+<p>You are replying to "{{title}}" </p>
 <p>@
-    <a href="https://{{xjtumen_base_url}}/t/-/{{topic_id}}">https://{{xjtumen_base_url}}/{{topic_id}}</a> as <em>anonymous_user</em>
+    <a href="https://{{xjtumen_base_url}}/t/-/{{topic_id}}">https://{{xjtumen_base_url}}/t/-/{{topic_id}}</a> as <em>anonymous_user</em>
 </p>
-<form action=/discourse-post-to-topic method=POST>
+<form action=/xjtumen-custom-api/discourse-post-to-topic method=POST>
     <label>
         Your reply:
         <input name="content">

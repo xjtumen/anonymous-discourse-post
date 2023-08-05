@@ -1,12 +1,15 @@
 use std::collections::HashMap;
 use std::io;
 use std::env;
-use actix_web::{body::BoxBody, dev::ServiceResponse, get, http::{header::ContentType, StatusCode}, middleware::{ErrorHandlerResponse, ErrorHandlers}, web, App, HttpResponse, HttpServer, Result, post};
+use std::fmt::format;
+use actix_web::{body::BoxBody, dev::ServiceResponse, get, http::{header::ContentType, StatusCode},
+                middleware::{ErrorHandlerResponse, ErrorHandlers},
+                web, App, HttpResponse, HttpServer, Result, post};
 use handlebars::Handlebars;
 use serde_json::json;
 use serde::Deserialize;
 
-const XJTUMEN_URL_BASE: &str = "xjtu.men";
+const XJTUMEN_URL_BASE: &str = "xjtu.live";
 
 #[derive(Debug, Deserialize)]
 pub struct WebForm {
@@ -18,7 +21,7 @@ pub struct WebForm {
 #[post("/xjtumen-custom-api/discourse-post-to-topic")]
 async fn do_discourse_post_to_topic(form: web::Form<WebForm>) -> HttpResponse {
   let xjtumen_url = format!("https://{}/posts", XJTUMEN_URL_BASE);
-  let mut map =  HashMap::from([
+  let mut map = HashMap::from([
     ("category", ""),
     ("title", ""),
     ("raw", &*form.content),
@@ -37,11 +40,21 @@ async fn do_discourse_post_to_topic(form: web::Form<WebForm>) -> HttpResponse {
     .send()
     .await.unwrap();
   println!("{}", res.status());
-  HttpResponse::Ok().finish()
+  if res.status().is_success() {
+    let res_json = res.json::<serde_json::Value>().await.unwrap();
+    println!("{:?}", res_json);
+    let response_post_id = res_json.get("post_number").unwrap().as_i64().unwrap_or(0);
+    let reply_result_url = format!("https://{}/t/topic/{}/{}",XJTUMEN_URL_BASE, form.topic_id, response_post_id);
+    HttpResponse::Ok().body(format!("<p>Successfully replied. View your reply @ <a href=\"{0}\">{0}</a></p>", reply_result_url))
+  } else {
+    HttpResponse::InternalServerError().body(
+      format!("API Request Failed with {}: {:?}", res.status().as_str(), res.text().await.unwrap()))
+  }
 }
 
 #[get("/xjtumen-custom-api/handle-reply-to-topic/{topic_id}/{title}")]
-async fn handle_reply_topic(hb: web::Data<Handlebars<'_>>, path: web::Path<(String, String)>) -> HttpResponse {
+async fn handle_reply_topic(hb: web::Data<Handlebars<'_>>, path: web::Path<(String, String)>)
+  -> HttpResponse {
   let data = json!({
     "xjtumen_base_url": XJTUMEN_URL_BASE,
         "topic_id": path.0,
