@@ -5,7 +5,8 @@ use std::time::Duration;
 use actix_extensible_rate_limit::backend::memory::InMemoryBackend;
 use actix_extensible_rate_limit::backend::SimpleInputFunctionBuilder;
 use actix_extensible_rate_limit::RateLimiter;
-use actix_web::{body::BoxBody, dev::ServiceResponse, get, http::{header::ContentType, StatusCode},
+use actix_web::{middleware, body::BoxBody, dev::ServiceResponse, get,
+                http::{header::ContentType, StatusCode},
                 middleware::{ErrorHandlerResponse, ErrorHandlers},
                 web, App, HttpResponse, HttpServer, Result, post};
 use handlebars::Handlebars;
@@ -13,6 +14,7 @@ use serde_json::json;
 use serde::Deserialize;
 
 const XJTUMEN_URL_BASE: &str = "xjtu.love";
+const MAX_REQ_PER_MIN: u64 = 2;
 
 #[derive(Debug, Deserialize)]
 pub struct WebForm {
@@ -86,16 +88,22 @@ async fn main() -> io::Result<()> {
   let handlebars_ref = web::Data::new(handlebars);
 
   HttpServer::new(move || {
-    let input = SimpleInputFunctionBuilder::new(Duration::from_secs(60), 2)
+    let input = SimpleInputFunctionBuilder::new(Duration::from_secs(60), MAX_REQ_PER_MIN)
       .peer_ip_key() // if use CDN, use `realip_remote_addr` instead
       .path_key() // rate limit at path level
       .build();
     let rate_limit = RateLimiter::builder(backend.clone(), input)
       .add_headers()
+      .request_denied_response(|_|
+        HttpResponse::build(StatusCode::TOO_MANY_REQUESTS).body(
+          format!("You have reached the rate limit of\n\
+           anonymous reply functionality,\n\
+          which is {} / 60s for each topic.\nPlease try again later.", MAX_REQ_PER_MIN)))
       .build();
     App::new()
       .wrap(error_handlers()) // middlewares' order matter!
       .wrap(rate_limit)
+      .wrap(middleware::Logger::default())
       .app_data(handlebars_ref.clone())
       .service(handle_reply_topic)
       .service(do_discourse_post_to_topic)
@@ -112,7 +120,7 @@ fn error_handlers() -> ErrorHandlers<BoxBody> {
 
 // Error handler for a 404 Page not found error.
 fn not_found<B>(res: ServiceResponse<B>) -> Result<ErrorHandlerResponse<BoxBody>> {
-  let response = get_error_response(&res, "Page not found");
+  let response = get_error_response(&res, "Not Found");
   Ok(ErrorHandlerResponse::Response(ServiceResponse::new(
     res.into_parts().0,
     response.map_into_left_body(),
