@@ -1,7 +1,10 @@
 use std::collections::HashMap;
 use std::io;
 use std::env;
-use std::fmt::format;
+use std::time::Duration;
+use actix_extensible_rate_limit::backend::memory::InMemoryBackend;
+use actix_extensible_rate_limit::backend::SimpleInputFunctionBuilder;
+use actix_extensible_rate_limit::RateLimiter;
 use actix_web::{body::BoxBody, dev::ServiceResponse, get, http::{header::ContentType, StatusCode},
                 middleware::{ErrorHandlerResponse, ErrorHandlers},
                 web, App, HttpResponse, HttpServer, Result, post};
@@ -9,7 +12,7 @@ use handlebars::Handlebars;
 use serde_json::json;
 use serde::Deserialize;
 
-const XJTUMEN_URL_BASE: &str = "xjtu.live";
+const XJTUMEN_URL_BASE: &str = "xjtu.love";
 
 #[derive(Debug, Deserialize)]
 pub struct WebForm {
@@ -19,8 +22,8 @@ pub struct WebForm {
 
 // Macro documentation can be found in the actix_web_codegen crate
 #[post("/xjtumen-custom-api/discourse-post-to-topic")]
-async fn do_discourse_post_to_topic(form: web::Form<WebForm>) -> HttpResponse {
-  let xjtumen_url = format!("https://{}/posts", XJTUMEN_URL_BASE);
+async fn do_discourse_post_to_topic(hb: web::Data<Handlebars<'_>>, form: web::Form<WebForm>) -> HttpResponse {
+  let reply_xjtumen_url = format!("https://{}/posts", XJTUMEN_URL_BASE);
   let mut map = HashMap::from([
     ("category", ""),
     ("title", ""),
@@ -32,29 +35,33 @@ async fn do_discourse_post_to_topic(form: web::Form<WebForm>) -> HttpResponse {
   let client = reqwest::Client::new();
   let api_key_anonymous = env::var("DISCOURSE_API_KEY_ANONYMOUS").unwrap();
 
-  let res = client.post(xjtumen_url)
+  let res = client.post(reply_xjtumen_url)
     .header("Accept", "application/json; charset=utf-8")
     .header("Api-Key", api_key_anonymous)
     .header("Api-Username", "anonymous_user")
     .json(&map)
     .send()
     .await.unwrap();
-  println!("{}", res.status());
+  // println!("{}", res.status());
   if res.status().is_success() {
     let res_json = res.json::<serde_json::Value>().await.unwrap();
-    println!("{:?}", res_json);
+    // println!("{:?}", res_json);
     let response_post_id = res_json.get("post_number").unwrap().as_i64().unwrap_or(0);
-    let reply_result_url = format!("https://{}/t/topic/{}/{}",XJTUMEN_URL_BASE, form.topic_id, response_post_id);
-    HttpResponse::Ok().body(format!("<p>Successfully replied. View your reply @ <a href=\"{0}\">{0}</a></p>", reply_result_url))
+    let reply_result_url = format!("https://{}/t/topic/{}/{}", XJTUMEN_URL_BASE, form.topic_id, response_post_id);
+    let data = json!({
+    "reply_result_url": reply_result_url,
+    });
+    let body = hb.render("success-do_discourse_post_to_topic", &data).unwrap();
+    HttpResponse::Ok().content_type(ContentType::html()).body(body)
   } else {
     HttpResponse::InternalServerError().body(
       format!("API Request Failed with {}: {:?}", res.status().as_str(), res.text().await.unwrap()))
   }
 }
 
-#[get("/xjtumen-custom-api/handle-reply-to-topic/{topic_id}/{title}")]
+#[get("/xjtumen-custom-api/handle-reply-to-topic/{topic_id}/{tail:.*}")]
 async fn handle_reply_topic(hb: web::Data<Handlebars<'_>>, path: web::Path<(String, String)>)
-  -> HttpResponse {
+                            -> HttpResponse {
   let data = json!({
     "xjtumen_base_url": XJTUMEN_URL_BASE,
         "topic_id": path.0,
@@ -62,11 +69,13 @@ async fn handle_reply_topic(hb: web::Data<Handlebars<'_>>, path: web::Path<(Stri
     });
   let body = hb.render("reply", &data).unwrap();
 
-  HttpResponse::Ok().body(body)
+  HttpResponse::Ok().content_type(ContentType::html()).body(body)
 }
 
 #[actix_web::main]
 async fn main() -> io::Result<()> {
+  // A backend is responsible for storing rate limit data, and choosing whether to allow/deny requests
+  let backend = InMemoryBackend::builder().build();
   // Handlebars uses a repository for the compiled templates. This object must be
   // shared between the application threads, and is therefore passed to the
   // Application Builder as an atomic reference-counted pointer.
@@ -77,8 +86,16 @@ async fn main() -> io::Result<()> {
   let handlebars_ref = web::Data::new(handlebars);
 
   HttpServer::new(move || {
+    let input = SimpleInputFunctionBuilder::new(Duration::from_secs(60), 2)
+      .peer_ip_key() // if use CDN, use `realip_remote_addr` instead
+      .path_key() // rate limit at path level
+      .build();
+    let rate_limit = RateLimiter::builder(backend.clone(), input)
+      .add_headers()
+      .build();
     App::new()
-      .wrap(error_handlers())
+      .wrap(error_handlers()) // middlewares' order matter!
+      .wrap(rate_limit)
       .app_data(handlebars_ref.clone())
       .service(handle_reply_topic)
       .service(do_discourse_post_to_topic)
@@ -120,8 +137,11 @@ fn get_error_response<B>(res: &ServiceResponse<B>, error: &str) -> HttpResponse<
   match hb {
     Some(hb) => {
       let data = json!({
-                "error": error,
-                "status_code": res.status().as_str()
+            "request_method": format!("{}", request.method()),
+            "request_uri": format!("{}", request.uri()),
+            "error": error,
+            "status_code": res.status().as_str(),
+            "error_info": ""
             });
       let body = hb.render("error", &data);
 
