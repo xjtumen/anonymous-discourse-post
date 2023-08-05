@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>reply to {{topic_id}} @ {{xjtumen_base_url}}</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width">
+</head>
+
+<body>
+<p>You are replying to {{title}} </p>
+<p>@
+    <a href="https://{{xjtumen_base_url}}/t/-/{{topic_id}}">https://{{xjtumen_base_url}}/{{topic_id}}</a> as <em>anonymous_user</em>
+</p>
+<form action=/discourse-post-to-topic method=POST>
+    <label>
+        Your reply:
+        <input name="content">
+    </label>
+    <input type="hidden" name="topic_id" value="{{topic_id}}">
+
+    <button type=submit>Submit!</button>
+</form>
+</body>
+</html>

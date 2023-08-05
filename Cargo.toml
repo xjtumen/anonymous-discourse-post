@@ -1,0 +1,13 @@
+[package]
+name = "replytotopic"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+actix-web = "*"
+handlebars = { version = "*", features = ["dir_source"] }
+serde = { version = "*", features = ["derive"] }
+reqwest = { version = "*", features = ["json"] }
+serde_json = "*"
