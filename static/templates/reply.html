@@ -2,16 +2,16 @@
 <html>
 
 <head>
-    <title>reply to {{topic_id}} @ {{xjtumen_base_url}}</title>
+    <title>reply to {{topic_id}} @ {{hostname}}</title>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width">
 </head>
 
 <body>
 <p>You are replying as <em>anonymous_user</em> to
-    <a href="https://{{xjtumen_base_url}}/t/-/{{topic_id}}">{{title}}</a></p>
+    <a href="https://{{hostname}}/t/-/{{topic_id}}">{{title}}</a></p>
 
-<form action=/xjtumen-custom-api/discourse-post-to-topic method=POST>
+<form action=/xjtumen-custom-api/discourse-post-to-topic/{{hostname}} method=POST>
     <label>
         Your reply:
         <input name="content">
@@ -20,6 +20,6 @@
 
     <button type=submit>Submit!</button>
 </form>
-<p><a href="https://anonymouspost.xjtu.live/xjtumen-custom-api/handle-reply-to-topic/{{topic_id}}/{{title}}" target="_blank" rel="noopener noreferrer">Reply In New Tab</a></p>
+<p><a href="https://anonymouspost.xjtu.live/xjtumen-custom-api/handle-reply-to-topic/{{hostname}}/{{topic_id}}/{{title}}" target="_blank" rel="noopener noreferrer">Reply In New Tab</a></p>
 </body>
 </html>

@@ -13,8 +13,8 @@ use handlebars::Handlebars;
 use serde_json::json;
 use serde::Deserialize;
 
-const XJTUMEN_URL_BASE: &str = "xjtu.love";
-const MAX_REQ_PER_MIN: u64 = 2;
+const XJTUMEN_URL_BASE: &str = "https://xjtu.love/posts";
+const MAX_REQ_PER_60S: u64 = 2;
 
 #[derive(Debug, Deserialize)]
 pub struct WebForm {
@@ -23,9 +23,8 @@ pub struct WebForm {
 }
 
 // Macro documentation can be found in the actix_web_codegen crate
-#[post("/xjtumen-custom-api/discourse-post-to-topic")]
-async fn do_discourse_post_to_topic(hb: web::Data<Handlebars<'_>>, form: web::Form<WebForm>) -> HttpResponse {
-  let reply_xjtumen_url = format!("https://{}/posts", XJTUMEN_URL_BASE);
+#[post("/xjtumen-custom-api/discourse-post-to-topic/{hostname}")]
+async fn do_discourse_post_to_topic(hb: web::Data<Handlebars<'_>>, form: web::Form<WebForm>, path: web::Path<String>) -> HttpResponse {
   let mut map = HashMap::from([
     ("category", ""),
     ("title", ""),
@@ -37,7 +36,7 @@ async fn do_discourse_post_to_topic(hb: web::Data<Handlebars<'_>>, form: web::Fo
   let client = reqwest::Client::new();
   let api_key_anonymous = env::var("DISCOURSE_API_KEY_ANONYMOUS").unwrap();
 
-  let res = client.post(reply_xjtumen_url)
+  let res = client.post(XJTUMEN_URL_BASE)
     .header("Accept", "application/json; charset=utf-8")
     .header("Api-Key", api_key_anonymous)
     .header("Api-Username", "anonymous_user")
@@ -49,9 +48,11 @@ async fn do_discourse_post_to_topic(hb: web::Data<Handlebars<'_>>, form: web::Fo
     let res_json = res.json::<serde_json::Value>().await.unwrap();
     // println!("{:?}", res_json);
     let response_post_id = res_json.get("post_number").unwrap().as_i64().unwrap_or(0);
-    let reply_result_url = format!("https://{}/t/topic/{}/{}", XJTUMEN_URL_BASE, form.topic_id, response_post_id);
+    let reply_result_url = format!("https://{}/t/topic/{}/{}", path.as_str(), form.topic_id, response_post_id);
     let data = json!({
-    "reply_result_url": reply_result_url,
+    "hostname": path.as_str(),
+      "topic_id": form.topic_id,
+      "reply_result_url": reply_result_url
     });
     let body = hb.render("success-do_discourse_post_to_topic", &data).unwrap();
     HttpResponse::Ok().content_type(ContentType::html()).body(body)
@@ -61,13 +62,13 @@ async fn do_discourse_post_to_topic(hb: web::Data<Handlebars<'_>>, form: web::Fo
   }
 }
 
-#[get("/xjtumen-custom-api/handle-reply-to-topic/{topic_id}/{tail:.*}")]
-async fn handle_reply_topic(hb: web::Data<Handlebars<'_>>, path: web::Path<(String, String)>)
+#[get("/xjtumen-custom-api/handle-reply-to-topic/{hostname}/{topic_id}/{tail:.*}")]
+async fn handle_reply_topic(hb: web::Data<Handlebars<'_>>, path: web::Path<(String, String, String)>)
                             -> HttpResponse {
   let data = json!({
-    "xjtumen_base_url": XJTUMEN_URL_BASE,
-        "topic_id": path.0,
-        "title": path.1,
+        "hostname": path.0,
+        "topic_id": path.1,
+        "title": path.2,
     });
   let body = hb.render("reply", &data).unwrap();
 
@@ -88,7 +89,7 @@ async fn main() -> io::Result<()> {
   let handlebars_ref = web::Data::new(handlebars);
 
   HttpServer::new(move || {
-    let input = SimpleInputFunctionBuilder::new(Duration::from_secs(60), MAX_REQ_PER_MIN)
+    let input = SimpleInputFunctionBuilder::new(Duration::from_secs(60), MAX_REQ_PER_60S)
       .peer_ip_key() // if use CDN, use `realip_remote_addr` instead
       .path_key() // rate limit at path level
       .build();
@@ -98,7 +99,7 @@ async fn main() -> io::Result<()> {
         HttpResponse::build(StatusCode::TOO_MANY_REQUESTS).body(
           format!("You have reached the rate limit of\n\
            anonymous reply functionality,\n\
-          which is {} / 60s for each topic.\nPlease try again later.", MAX_REQ_PER_MIN)))
+          which is {} / 60s for each topic.\nPlease try again later.", MAX_REQ_PER_60S)))
       .build();
     App::new()
       .wrap(error_handlers()) // middlewares' order matter!
