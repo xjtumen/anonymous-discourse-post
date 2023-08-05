@@ -13,7 +13,7 @@ use handlebars::Handlebars;
 use serde_json::json;
 use serde::Deserialize;
 
-const XJTUMEN_URL_BASE: &str = "https://xjtu.love/posts";
+const XJTUMEN_URL_BASE: &str = "https://xjtu.live/posts";
 const MAX_REQ_PER_60S: u64 = 2;
 
 #[derive(Debug, Deserialize)]
@@ -48,7 +48,7 @@ async fn do_discourse_post_to_topic(hb: web::Data<Handlebars<'_>>, form: web::Fo
     let res_json = res.json::<serde_json::Value>().await.unwrap();
     // println!("{:?}", res_json);
     let response_post_id = res_json.get("post_number").unwrap().as_i64().unwrap_or(0);
-    let reply_result_url = format!("https://{}/t/topic/{}/{}", path.as_str(), form.topic_id, response_post_id);
+    let reply_result_url = format!("https://{}/t/-/{}/{}", path.as_str(), form.topic_id, response_post_id);
     let data = json!({
     "hostname": path.as_str(),
       "topic_id": form.topic_id,
