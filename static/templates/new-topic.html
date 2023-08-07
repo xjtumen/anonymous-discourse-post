@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>匿名发布话题 @ {{hostname}}</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width">
+</head>
+
+<body>
+<p>正在以 <em>anonymous_user</em> 身份新建一个话题</p>
+
+<form action=/xjtumen-custom-api/discourse-new-topic/{{hostname}} method=POST>
+    <label>
+        标题：
+        <input name="topic_title">
+    </label>
+
+    <label>
+        正文：
+        <input name="topic_content">
+    </label>
+
+    <button type=submit>提交</button>
+</form>
+<p><a href="/xjtumen-custom-api/handle-reply-to-topic/{{hostname}}/" target="_blank" rel="noopener noreferrer">Open In New Tab</a></p>
+</body>
+</html>

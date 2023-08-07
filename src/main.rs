@@ -13,18 +13,23 @@ use handlebars::Handlebars;
 use serde_json::json;
 use serde::Deserialize;
 
-const XJTUMEN_URL_BASE: &str = "https://xjtu.live/posts";
-const MAX_REQ_PER_60S: u64 = 2;
+const XJTUMEN_URL_BASE: &str = "https://xjtu.live/posts.json";
+const RATE_LIMIT_NUM_REQ: u64 = 10;
+const RATE_LIMIT_INTERVAL: u64 = 600; // 10 min
 
 #[derive(Debug, Deserialize)]
-pub struct WebForm {
+pub struct post_to_topic_Form {
   content: String,
   topic_id: String,
 }
+#[derive(Debug, Deserialize)]
+pub struct new_topic_Form {
+  topic_content: String,
+  topic_title: String,
+}
 
-// Macro documentation can be found in the actix_web_codegen crate
 #[post("/xjtumen-custom-api/discourse-post-to-topic/{hostname}")]
-async fn do_discourse_post_to_topic(hb: web::Data<Handlebars<'_>>, form: web::Form<WebForm>, path: web::Path<String>) -> HttpResponse {
+async fn do_discourse_post_to_topic(hb: web::Data<Handlebars<'_>>, form: web::Form<post_to_topic_Form>, path: web::Path<String>) -> HttpResponse {
   let mut map = HashMap::from([
     ("category", ""),
     ("title", ""),
@@ -62,6 +67,57 @@ async fn do_discourse_post_to_topic(hb: web::Data<Handlebars<'_>>, form: web::Fo
   }
 }
 
+
+#[post("/xjtumen-custom-api/discourse-new-topic/{hostname}")]
+async fn do_discourse_new_topic(hb: web::Data<Handlebars<'_>>, form: web::Form<new_topic_Form>, path: web::Path<String>) -> HttpResponse {
+  let mut map = HashMap::from([
+    ("category", "4"),
+    ("title", &*form.topic_title),
+    ("raw", &*form.topic_content),
+  ]);
+  map.insert("body", "json");
+
+  let client = reqwest::Client::new();
+  let api_key_anonymous = env::var("DISCOURSE_API_KEY_ANONYMOUS").unwrap();
+
+  let res = client.post(XJTUMEN_URL_BASE)
+    .header("Accept", "application/json; charset=utf-8")
+    .header("Api-Key", api_key_anonymous)
+    .header("Api-Username", "anonymous_user")
+    .json(&map)
+    .send()
+    .await.unwrap();
+  // println!("{}", res.status());
+  if res.status().is_success() {
+    let res_json = res.json::<serde_json::Value>().await.unwrap();
+    // println!("{:?}", res_json);
+    let response_topic_id = res_json.get("topic_id").unwrap().as_i64().unwrap_or(0);
+    let reply_result_url = format!("https://{}/t/-/{}/", path.as_str(), response_topic_id);
+    let data = json!({
+      "hostname": path.as_str(),
+      "topic_id": response_topic_id,
+      "reply_result_url": reply_result_url,
+    });
+    let body = hb.render("success-do_discourse_new_topic", &data).unwrap();
+    HttpResponse::Ok().content_type(ContentType::html()).body(body)
+  } else {
+    HttpResponse::InternalServerError().body(
+      format!("API Request Failed with {}: {:?}", res.status().as_str(), res.text().await.unwrap()))
+  }
+}
+
+#[get("/xjtumen-custom-api/handle-reply-to-topic/{hostname}/")]
+async fn handle_new_topic(hb: web::Data<Handlebars<'_>>, path: web::Path<String>)
+                            -> HttpResponse {
+  let data = json!({
+        "hostname": path.as_str(),
+    });
+  let body = hb.render("new-topic", &data).unwrap();
+
+  HttpResponse::Ok().content_type(ContentType::html()).body(body)
+}
+
+
 #[get("/xjtumen-custom-api/handle-reply-to-topic/{hostname}/{topic_id}/{tail:.*}")]
 async fn handle_reply_topic(hb: web::Data<Handlebars<'_>>, path: web::Path<(String, String, String)>)
                             -> HttpResponse {
@@ -89,17 +145,15 @@ async fn main() -> io::Result<()> {
   let handlebars_ref = web::Data::new(handlebars);
 
   HttpServer::new(move || {
-    let input = SimpleInputFunctionBuilder::new(Duration::from_secs(60), MAX_REQ_PER_60S)
+    let input = SimpleInputFunctionBuilder::new(Duration::from_secs(RATE_LIMIT_INTERVAL), RATE_LIMIT_NUM_REQ)
       .peer_ip_key() // if use CDN, use `realip_remote_addr` instead
-      .path_key() // rate limit at path level
+      // .path_key() // rate limit at path level
       .build();
     let rate_limit = RateLimiter::builder(backend.clone(), input)
       .add_headers()
       .request_denied_response(|_|
         HttpResponse::build(StatusCode::TOO_MANY_REQUESTS).body(
-          format!("You have reached the rate limit of\n\
-           anonymous reply functionality,\n\
-          which is {} / 60s for each topic.\nPlease try again later.", MAX_REQ_PER_60S)))
+          format!("为防滥用，{}s内仅能匿名回复{}次，请稍后再试", RATE_LIMIT_INTERVAL, RATE_LIMIT_NUM_REQ)))
       .build();
     App::new()
       .wrap(error_handlers()) // middlewares' order matter!
@@ -107,7 +161,9 @@ async fn main() -> io::Result<()> {
       .wrap(middleware::Logger::default())
       .app_data(handlebars_ref.clone())
       .service(handle_reply_topic)
+      .service(handle_new_topic)
       .service(do_discourse_post_to_topic)
+      .service(do_discourse_new_topic)
   })
     .bind(("127.0.0.1", 7010))?
     .run()

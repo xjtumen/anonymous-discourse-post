@@ -2,23 +2,23 @@
 <html>
 
 <head>
-    <title>reply to {{topic_id}} @ {{hostname}}</title>
+    <title>匿名回复 {{topic_id}} @ {{hostname}}</title>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width">
 </head>
 
 <body>
-<p>You are replying as <em>anonymous_user</em> to
+<p>正在以 <em>anonymous_user</em> 身份回复
     <a href="https://{{hostname}}/t/-/{{topic_id}}">{{title}}</a></p>
 
 <form action=/xjtumen-custom-api/discourse-post-to-topic/{{hostname}} method=POST>
     <label>
-        Your reply:
+        输入内容：
         <input name="content">
     </label>
     <input type="hidden" name="topic_id" value="{{topic_id}}">
 
-    <button type=submit>Submit!</button>
+    <button type=submit>提交</button>
 </form>
 <p><a href="/xjtumen-custom-api/handle-reply-to-topic/{{hostname}}/{{topic_id}}/{{title}}" target="_blank" rel="noopener noreferrer">Reply In New Tab</a></p>
 </body>
