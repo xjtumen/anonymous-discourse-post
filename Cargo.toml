@@ -13,3 +13,7 @@ reqwest = { version = "*", features = ["json"] }
 serde_json = "*"
 actix-extensible-rate-limit = "*"
 env_logger = "*"
+futures-util = "*"
+actix-http = "*"
+urlencoding = "*"
+log = "*"

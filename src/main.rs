@@ -10,27 +10,28 @@ use actix_web::{middleware, body::BoxBody, dev::ServiceResponse, get,
                 http::{header::ContentType, StatusCode},
                 middleware::{ErrorHandlerResponse, ErrorHandlers},
                 web, App, HttpResponse, HttpServer, Result, post};
-use actix_web::dev::ServiceRequest;
 use handlebars::Handlebars;
 use serde_json::json;
 use serde::Deserialize;
 
+mod read_request_body;
+
 const XJTUMEN_URL_BASE: &str = "https://xjtu.men/posts.json";
 
 #[derive(Debug, Deserialize)]
-pub struct post_to_topic_Form {
+pub struct PostToTopicForm {
   content: String,
   topic_id: String,
 }
 
 #[derive(Debug, Deserialize)]
-pub struct new_topic_Form {
+pub struct NewTopicForm {
   topic_content: String,
   topic_title: String,
 }
 
 #[post("/{hostname}")]
-async fn do_discourse_post_to_topic(hb: web::Data<Handlebars<'_>>, form: web::Form<post_to_topic_Form>, path: web::Path<String>) -> HttpResponse {
+async fn do_discourse_post_to_topic(hb: web::Data<Handlebars<'_>>, form: web::Form<PostToTopicForm>, path: web::Path<String>) -> HttpResponse {
   let mut map = HashMap::from([
     ("category", ""),
     ("title", ""),
@@ -70,7 +71,7 @@ async fn do_discourse_post_to_topic(hb: web::Data<Handlebars<'_>>, form: web::Fo
 
 
 #[post("/{hostname}")]
-async fn do_discourse_new_topic(hb: web::Data<Handlebars<'_>>, form: web::Form<new_topic_Form>, path: web::Path<String>) -> HttpResponse {
+async fn do_discourse_new_topic(hb: web::Data<Handlebars<'_>>, form: web::Form<NewTopicForm>, path: web::Path<String>) -> HttpResponse {
   let mut map = HashMap::from([
     ("category", "4"),
     ("title", &*form.topic_title),
@@ -164,6 +165,7 @@ async fn main() -> io::Result<()> {
           .service(handle_reply_topic)
           .service(handle_new_topic)
           .service(web::scope("/call-discourse-api")
+            .wrap(read_request_body::Logging)
             .service(
               web::scope("/new-topic")
                 // TODO handle duplications of rate limit code
