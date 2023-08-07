@@ -58,7 +58,7 @@ async fn do_discourse_post_to_topic(hb: web::Data<Handlebars<'_>>, form: web::Fo
       "topic_id": form.topic_id,
       "reply_result_url": reply_result_url
     });
-    let body = hb.render("success-do_discourse_post_to_topic", &data).unwrap();
+    let body = hb.render("reply-succeeded", &data).unwrap();
     HttpResponse::Ok().content_type(ContentType::html()).body(body)
   } else {
     HttpResponse::InternalServerError().body(
@@ -97,7 +97,7 @@ async fn do_discourse_new_topic(hb: web::Data<Handlebars<'_>>, form: web::Form<N
       "topic_id": response_topic_id,
       "reply_result_url": reply_result_url,
     });
-    let body = hb.render("success-do_discourse_new_topic", &data).unwrap();
+    let body = hb.render("new-topic-succeeded", &data).unwrap();
     HttpResponse::Ok().content_type(ContentType::html()).body(body)
   } else {
     HttpResponse::InternalServerError().body(

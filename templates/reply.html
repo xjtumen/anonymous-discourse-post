@@ -5,21 +5,33 @@
     <title>匿名回复 {{topic_id}} @ {{hostname}}</title>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width">
+
 </head>
 
 <body>
 <p>正在以 <em>anonymous_user</em> 身份回复
     <a href="https://{{hostname}}/t/-/{{topic_id}}">{{title}}</a></p>
 
-<form action=/xjtumen-custom-api/call-discourse-api/post-to-topic/{{hostname}} method=POST>
-    <label>
-        输入内容：
-        <input name="content">
-    </label>
-    <input type="hidden" name="topic_id" value="{{topic_id}}">
 
-    <button type=submit>提交</button>
+<p>你的回复：</p>
+
+<link rel="stylesheet" href="https://{{hostname}}/xjtumen-g/cdn/simplemde.min.css">
+<script src="https://{{hostname}}/xjtumen-g/cdn/simplemde.min.js"></script>
+
+<form role="form" method=POST action=/xjtumen-custom-api/call-discourse-api/post-to-topic/{{hostname}} name="myForm"
+      id="myForm">
+
+    <textarea class="form-control" rows="3" id="my-post" name="content"></textarea>
+    <input type="hidden" name="topic_id" value="{{topic_id}}">
+    <script>
+        var simplemde = new SimpleMDE({element: document.getElementById("my-post")});
+        // const easyMDE = new EasyMDE({element: document.getElementById('my-post')});
+    </script>
+    <button class="btn btn-default" type="submit">提交</button>
 </form>
-<p><a href="/xjtumen-custom-api/handle-reply-to-topic/{{hostname}}/{{topic_id}}/{{title}}" target="_blank" rel="noopener noreferrer">Reply In New Tab</a></p>
+
+
+<p><a href="/xjtumen-custom-api/handle-reply-to-topic/{{hostname}}/{{topic_id}}/{{title}}" target="_blank"
+      rel="noopener noreferrer">Reply In New Tab</a></p>
 </body>
 </html>

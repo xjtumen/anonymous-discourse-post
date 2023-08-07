@@ -10,19 +10,24 @@
 <body>
 <p>正在以 <em>anonymous_user</em> 身份新建一个话题</p>
 
-<form action=/xjtumen-custom-api/call-discourse-api/new-topic/{{hostname}} method=POST>
+<link rel="stylesheet" href="https://{{hostname}}/xjtumen-g/cdn/simplemde.min.css">
+<script src="https://{{hostname}}/xjtumen-g/cdn/simplemde.min.js"></script>
+<form role="form" method=POST action=/xjtumen-custom-api/call-discourse-api/new-topic/{{hostname}} name="myForm"
+      id="myForm">
     <label>
         标题：
         <input name="topic_title">
     </label>
 
-    <label>
-        正文：
-        <input name="topic_content">
-    </label>
-
-    <button type=submit>提交</button>
+    <textarea class="form-control" rows="3" id="my-post" name="topic_content"></textarea>
+    <script>
+        var simplemde = new SimpleMDE({element: document.getElementById("my-post")});
+        // const easyMDE = new EasyMDE({element: document.getElementById('my-post')});
+    </script>
+    <button class="btn btn-default" type="submit">提交</button>
 </form>
+
+
 <p><a href="/xjtumen-custom-api/handle-reply-to-topic/{{hostname}}/" target="_blank" rel="noopener noreferrer">Open In New Tab</a></p>
 </body>
 </html>
