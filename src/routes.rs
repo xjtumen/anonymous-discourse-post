@@ -1,18 +1,12 @@
 use std::collections::HashMap;
-use std::io;
 use std::env;
-use std::time::Duration;
-use actix_extensible_rate_limit as rl;
-use actix_extensible_rate_limit::backend::memory::InMemoryBackend;
-use actix_extensible_rate_limit::backend::{SimpleInputFunctionBuilder, SimpleInputFuture};
-use actix_extensible_rate_limit::{RateLimiter, RateLimiterBuilder};
-use actix_web::{middleware, body::BoxBody, dev::ServiceResponse, get,
-                http::{header::ContentType, StatusCode},
-                middleware::{ErrorHandlerResponse, ErrorHandlers},
-                web, App, HttpResponse, HttpServer, Result, post};
+
+use actix_web::{get,
+                http::header::ContentType,
+                HttpResponse, post, web};
 use handlebars::Handlebars;
-use serde_json::json;
 use serde::Deserialize;
+use serde_json::json;
 
 #[derive(Debug, Deserialize)]
 pub struct PostToTopicForm {
@@ -22,6 +16,7 @@ pub struct PostToTopicForm {
 
 #[derive(Debug, Deserialize)]
 pub struct NewTopicForm {
+  category: String,
   topic_content: String,
   topic_title: String,
 }
@@ -69,8 +64,9 @@ async fn do_discourse_post_to_topic(hb: web::Data<Handlebars<'_>>, form: web::Fo
 
 #[post("/{hostname}")]
 async fn do_discourse_new_topic(hb: web::Data<Handlebars<'_>>, form: web::Form<NewTopicForm>, path: web::Path<String>) -> HttpResponse {
+  println!("{:?}", form);
   let mut map = HashMap::from([
-    ("category", "4"),
+    ("category", &*form.category),
     ("title", &*form.topic_title),
     ("raw", &*form.topic_content),
   ]);

@@ -1,18 +1,9 @@
-use std::collections::HashMap;
-use std::io;
-use std::env;
-use std::time::Duration;
-use actix_extensible_rate_limit as rl;
-use actix_extensible_rate_limit::backend::memory::InMemoryBackend;
-use actix_extensible_rate_limit::backend::{SimpleInputFunctionBuilder, SimpleInputFuture};
-use actix_extensible_rate_limit::{RateLimiter, RateLimiterBuilder};
-use actix_web::{middleware, body::BoxBody, dev::ServiceResponse, get,
+use actix_web::{body::BoxBody, dev::ServiceResponse,
                 http::{header::ContentType, StatusCode},
-                middleware::{ErrorHandlerResponse, ErrorHandlers},
-                web, App, HttpResponse, HttpServer, Result, post};
+                HttpResponse,
+                middleware::{ErrorHandlerResponse, ErrorHandlers}, Result, web};
 use handlebars::Handlebars;
 use serde_json::json;
-use serde::Deserialize;
 
 // Custom error handlers, to return HTML responses when an error occurs.
 pub(crate) fn error_handlers() -> ErrorHandlers<BoxBody> {

@@ -1,25 +1,18 @@
-use std::collections::HashMap;
 use std::io;
-use std::env;
 use std::time::Duration;
-use actix_extensible_rate_limit as rl;
-use actix_extensible_rate_limit::backend::memory::InMemoryBackend;
-use actix_extensible_rate_limit::backend::{SimpleInputFunctionBuilder, SimpleInputFuture};
-use actix_extensible_rate_limit::{RateLimiter, RateLimiterBuilder};
-use actix_web::{middleware, body::BoxBody, dev::ServiceResponse, get,
-                http::{header::ContentType, StatusCode},
-                middleware::{ErrorHandlerResponse, ErrorHandlers},
-                web, App, HttpResponse, HttpServer, Result, post};
-use handlebars::Handlebars;
-use serde_json::json;
-use serde::Deserialize;
 
+use actix_extensible_rate_limit::RateLimiter;
+use actix_extensible_rate_limit::backend::SimpleInputFunctionBuilder;
+use actix_extensible_rate_limit::backend::memory::InMemoryBackend;
+use actix_web::{App,
+                http::StatusCode,
+                HttpResponse, HttpServer, middleware, web};
+use handlebars::Handlebars;
 mod read_request_body;
 mod routes;
 mod error_handling;
 
 const XJTUMEN_URL_BASE: &str = "https://xjtu.men/posts.json";
-
 
 
 #[actix_web::main]
