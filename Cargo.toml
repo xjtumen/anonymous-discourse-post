@@ -12,3 +12,4 @@ serde = { version = "*", features = ["derive"] }
 reqwest = { version = "*", features = ["json"] }
 serde_json = "*"
 actix-extensible-rate-limit = "*"
+env_logger = "*"
