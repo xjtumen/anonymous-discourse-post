@@ -33,7 +33,7 @@ async fn do_discourse_post_to_topic(hb: web::Data<Handlebars<'_>>, form: web::Fo
   map.insert("body", "json");
 
   let client = reqwest::Client::new();
-  let api_key_anonymous = env::var("DISCOURSE_API_KEY_ANONYMOUS").unwrap();
+  let api_key_anonymous = env::var("DISCOURSE_API_KEY_ANONYMOUS").expect("DISCOURSE_API_KEY_ANONYMOUS not set");
 
   let res = client.post(crate::XJTUMEN_URL_BASE)
     .header("Accept", "application/json; charset=utf-8")
@@ -73,7 +73,7 @@ async fn do_discourse_new_topic(hb: web::Data<Handlebars<'_>>, form: web::Form<N
   map.insert("body", "json");
 
   let client = reqwest::Client::new();
-  let api_key_anonymous = env::var("DISCOURSE_API_KEY_ANONYMOUS").unwrap();
+  let api_key_anonymous = env::var("DISCOURSE_API_KEY_ANONYMOUS").expect("DISCOURSE_API_KEY_ANONYMOUS not set");
 
   let res = client.post(crate::XJTUMEN_URL_BASE)
     .header("Accept", "application/json; charset=utf-8")

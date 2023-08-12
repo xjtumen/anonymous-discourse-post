@@ -3,14 +3,14 @@ use std::{
   future::{ready, Ready},
   rc::Rc,
 };
-
+use std::borrow::Cow;
 use actix_http::h1;
 use actix_web::{
   dev::{self, Service, ServiceRequest, ServiceResponse, Transform},
   Error, web,
 };
 use futures_util::future::LocalBoxFuture;
-use log::info;
+use log::{info, warn};
 
 pub struct Logging;
 
@@ -56,9 +56,9 @@ impl<S, B> Service<ServiceRequest> for LoggingMiddleware<S>
     Box::pin(async move {
       // extract bytes from request body
       let body = req.extract::<web::Bytes>().await.unwrap();
-      // let decoded = urlencoding::decode(body).expect("UTF-8");
 
-      info!("{:?} | {:?}", req.connection_info() ,body);
+      // info!("{:?} | {:?}", req.connection_info(), body);
+      warn!("{:?} | {:?} | {:?}", req.connection_info(), body, urlencoding::decode(format!("{:?}", body).as_str()).unwrap_or(Cow::Borrowed("Decoding Error")).into_owned().as_str());
 
       // re-insert body back into request to be used by handlers
       req.set_payload(bytes_to_payload(body));
