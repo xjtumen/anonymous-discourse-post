@@ -8,6 +8,8 @@ use actix_web::{App,
                 http::StatusCode,
                 HttpResponse, HttpServer, middleware, web};
 use handlebars::Handlebars;
+use crate::routes::NewTopicForm;
+
 mod read_request_body;
 mod routes;
 mod error_handling;
@@ -33,6 +35,7 @@ async fn main() -> io::Result<()> {
       .wrap(error_handling::error_handlers())
       .wrap(middleware::Logger::default())
       .app_data(handlebars_ref.clone())
+      // .app_data(web::Form::<NewTopicForm>::configure(|cfg| cfg.limit(256*1024)))
       .service(
         web::scope("/xjtumen-custom-api")
           .wrap(RateLimiter::builder(backend_customapi_general.clone(), SimpleInputFunctionBuilder::new(Duration::from_secs(3600), 600)
@@ -55,7 +58,7 @@ async fn main() -> io::Result<()> {
                 // TODO handle duplications of rate limit code
                 .wrap(RateLimiter::builder(backend_new_topic.clone(), SimpleInputFunctionBuilder::new(Duration::from_secs(3600), 2)
                   .peer_ip_key() // if use CDN, use `realip_remote_addr` instead
-                  // .path_key() // rate limit at path level, should not be set as it's easy to escape
+                  .path_key() // rate limit at path level, should not be set as it's easy to escape
                   .build())
                   .add_headers()
                   .request_denied_response(move |_|
@@ -69,7 +72,7 @@ async fn main() -> io::Result<()> {
               web::scope("/post-to-topic")
                 .wrap(RateLimiter::builder(backend_reply.clone(), SimpleInputFunctionBuilder::new(Duration::from_secs(1800), 10)
                   .peer_ip_key() // if use CDN, use `realip_remote_addr` instead
-                  // .path_key() // rate limit at path level, should not be set as it's easy to escape
+                  .path_key() // rate limit at path level, should not be set as it's easy to escape
                   .build())
                   .add_headers()
                   .request_denied_response(move |_|
