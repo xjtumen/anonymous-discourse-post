@@ -17,3 +17,8 @@ futures-util = "*"
 actix-http = "*"
 urlencoding = "*"
 log = "*"
+
+
+#
+#[patch.crates-io]
+#actix-extensible-rate-limit = { path = "/f/actix-extensible-rate-limit" }
