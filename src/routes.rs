@@ -5,6 +5,8 @@ use actix_web::{get,
                 http::header::ContentType,
                 HttpResponse, post, web};
 use handlebars::Handlebars;
+use log::error;
+use reqwest::StatusCode;
 use serde::Deserialize;
 use serde_json::json;
 
@@ -44,9 +46,37 @@ async fn do_discourse_post_to_topic(hb: web::Data<Handlebars<'_>>, form: web::Fo
     .await.unwrap();
   // println!("{}", res.status());
   if res.status().is_success() {
-    let res_json = res.json::<serde_json::Value>().await.unwrap();
+    let res_json = res.json::<serde_json::Value>().await;
+    if let Err(e) = res_json {
+      error!("discourse responded with invalid json");
+      error!("{}", e);
+      let data = json!({
+            "request_method":"POST",
+            "request_uri": format!("{}", path.as_str()),
+            "error": format!("{}", e),
+            "status_code": "",
+            "error_info": format!("{} {}", form.topic_id, form.content)
+            });
+      let body = hb.render("error", &data);
+      if let Err(e) = body {
+        return HttpResponse::build(StatusCode::INTERNAL_SERVER_ERROR)
+          .content_type(ContentType::plaintext())
+          .body(format!("{}", e));
+      } else {
+        return HttpResponse::build(StatusCode::INTERNAL_SERVER_ERROR)
+          .content_type(ContentType::html())
+          .body(body.unwrap());
+      }
+    }
+    let res_json = res_json.unwrap();
     // println!("{:?}", res_json);
-    let response_post_id = res_json.get("post_number").unwrap().as_i64().unwrap_or(0);
+    let response_post_id = res_json.get("post_number");
+    if let None = response_post_id {
+      return HttpResponse::build(StatusCode::INTERNAL_SERVER_ERROR)
+        .content_type(ContentType::html())
+        .body("failed to get post number from returned json");
+    }
+    let response_post_id = response_post_id.unwrap().as_i64().unwrap_or(0);
     let reply_result_url = format!("https://{}/t/-/{}/{}", path.as_str(), form.topic_id, response_post_id);
     let data = json!({
     "hostname": path.as_str(),
