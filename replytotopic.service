@@ -1,0 +1,26 @@
+[Unit]
+Description=reply to topic
+After=network.target network-online.target
+Requires=network-online.target
+
+[Service]
+User=user
+Group=user
+ExecStart=/home/user/replytotopic/target/release/replytotopic
+WorkingDirectory=/home/user/replytotopic
+Environment=DISCOURSE_API_KEY_ANONYMOUS=REPLACE_IT_WITH_YOUR_KEY
+StandardOutput=append:/var/log/replytotopic
+StandardError=append:/var/log/replytotopic
+TimeoutStopSec=5s
+PrivateTmp=true
+ProtectHome=false
+ProtectClock=yes
+ProtectControlGroups=yes
+ProtectKernelLogs=yes
+ProtectKernelModules=yes
+ProtectKernelTunables=yes
+ProtectSystem=strict
+AmbientCapabilities=CAP_NET_BIND_SERVICE
+
+[Install]
+WantedBy=multi-user.target
