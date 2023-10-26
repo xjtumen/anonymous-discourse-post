@@ -19,5 +19,5 @@ urlencoding = "*"
 log = "*"
 
 
-[patch.crates-io]
-actix-extensible-rate-limit = { path = "/home/iso/actix-extensible-rate-limit" }
+#[patch.crates-io]
+#actix-extensible-rate-limit = { path = "/home/iso/actix-extensible-rate-limit" }

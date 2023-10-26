@@ -23,7 +23,7 @@ pub struct NewTopicForm {
   topic_title: String,
 }
 
-
+static API_USERNAME: &str = "instant_reply_agent";
 #[post("/{hostname}")]
 async fn do_discourse_post_to_topic(hb: web::Data<Handlebars<'_>>, form: web::Form<PostToTopicForm>, path: web::Path<String>) -> HttpResponse {
   let mut map = HashMap::from([
@@ -40,7 +40,7 @@ async fn do_discourse_post_to_topic(hb: web::Data<Handlebars<'_>>, form: web::Fo
   let res = client.post(crate::XJTUMEN_URL_BASE)
     .header("Accept", "application/json; charset=utf-8")
     .header("Api-Key", api_key_anonymous)
-    .header("Api-Username", "anonymous_user")
+    .header("Api-Username", API_USERNAME)
     .json(&map)
     .send()
     .await.unwrap();
@@ -108,7 +108,7 @@ async fn do_discourse_new_topic(hb: web::Data<Handlebars<'_>>, form: web::Form<N
   let res = client.post(crate::XJTUMEN_URL_BASE)
     .header("Accept", "application/json; charset=utf-8")
     .header("Api-Key", api_key_anonymous)
-    .header("Api-Username", "anonymous_user")
+    .header("Api-Username", API_USERNAME)
     .json(&map)
     .send()
     .await.unwrap();

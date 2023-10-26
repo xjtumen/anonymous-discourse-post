@@ -62,7 +62,7 @@ async fn main() -> io::Result<()> {
                   .add_headers()
                   .request_denied_response(move |_|
                     HttpResponse::build(StatusCode::TOO_MANY_REQUESTS).insert_header(actix_web::http::header::ContentType::plaintext()).body(
-                      format!("为防滥用，{}s内仅能{}{}次，请稍后再试", 3600, "尝试新建话题", 1))
+                      format!("为防滥用，{}s内仅能{}{}次，请稍后再试", 3600, "尝试创建话题", 1))
                   )
                   .build())
                 .service(routes::do_discourse_new_topic)

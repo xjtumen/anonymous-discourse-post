@@ -16,7 +16,7 @@ cd ~
 git clone https://github.com/xjtumen/anonymous-discourse-post
 cd replytotopic
 cargo build release
-# create a new user called `anonymous_user`
+# create a new user called `instant_reply_agent`
 # create an API key for it with sufficient permissions
 # adapt replytotopic.service to your website, esp. DISCOURSE_API_KEY_ANONYMOUS, then:
 cp replytotopic.service /etc/systemd/system/
