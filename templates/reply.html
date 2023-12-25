@@ -4,19 +4,20 @@
 <head>
     <title>匿名回复 {{topic_id}} @ {{hostname}}</title>
     <meta charset="UTF-8">
+    <link rel="stylesheet"  href="/xjtumen-g/cdn/auto-dark-mode.css">
     <meta name="viewport" content="width=device-width">
 
 </head>
 
 <body>
 <p>正在以 <em>instant_reply_agent</em> 身份快速回复
-    <a href="https://{{hostname}}/t/-/{{topic_id}}">{{title}}</a></p>
+    <a href="/t/-/{{topic_id}}">{{title}}</a></p>
 
 
 <p>你的回复：</p>
 
-<link rel="stylesheet" href="https://{{hostname}}/xjtumen-g/cdn/simplemde.min.css">
-<script src="https://{{hostname}}/xjtumen-g/cdn/simplemde.min.js"></script>
+<link rel="stylesheet" href="/xjtumen-g/cdn/simplemde-theme-dark.min.css">
+<script src="/xjtumen-g/cdn/simplemde.min.js"></script>
 
 <form role="form" method=POST action=/xjtumen-custom-api/call-discourse-api/post-to-topic/{{hostname}} name="myForm"
       id="myForm">

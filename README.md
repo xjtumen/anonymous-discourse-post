@@ -8,7 +8,7 @@ Allow users to reply to a topic anonymously or create a new topic anonymously in
 * Rate limited: to prevent spam, *reply* in rate limited to 3 times per 10 minutes and *new topic* is 1 times per 10 minutes by default. You can configure that in `main.rs`.
  
 ## How to set it up on *your* Discourse instance
-We hard-code lots of assets' URLs since global CDN is slow for China, so you have to customize URLs containing `xjtu.live`.
+We hard-code lots of assets' URLs since global CDN is slow for China, so you may have to manually serve files in `need-serve-elsewhere`.
 
 
 ```sh

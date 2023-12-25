@@ -1,0 +1,13 @@
+    /* Style rules for dark mode */
+@media (prefers-color-scheme: dark) {
+    body {
+        background-color: black;
+        color: white;
+    }
+}/* Style rules for light mode */
+@media (prefers-color-scheme: light) {
+    body {
+        background-color: white;
+        color: black;
+    }
+}

@@ -4,14 +4,15 @@
 <head>
     <title>匿名发布话题 @ {{hostname}}</title>
     <meta charset="UTF-8">
+    <link rel="stylesheet"  href="/xjtumen-g/cdn/auto-dark-mode.css">
     <meta name="viewport" content="width=device-width">
 </head>
 
 <body>
 <p>正在以 <em>instant_reply_agent</em> 身份快速创建话题</p>
 
-<link rel="stylesheet" href="https://{{hostname}}/xjtumen-g/cdn/simplemde.min.css">
-<script src="https://{{hostname}}/xjtumen-g/cdn/simplemde.min.js"></script>
+<link rel="stylesheet" href="/xjtumen-g/cdn/simplemde-theme-dark.min.css">
+<script src="/xjtumen-g/cdn/simplemde.min.js"></script>
 <form role="form" method=POST action=/xjtumen-custom-api/call-discourse-api/new-topic/{{hostname}} name="myForm"
       id="myForm">
     <label>
